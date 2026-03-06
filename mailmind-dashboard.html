@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MailMind AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Lora:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', system-ui, sans-serif; background: #f8f7ff; min-height: 100vh; display: flex; flex-direction: column; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 99px; }
+    @keyframes spin   { to { transform: rotate(360deg); } }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes pulse  { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+
+    /* Header */
+    #header { background: white; border-bottom: 1px solid #f3f4f6; padding: 13px 22px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-icon { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg,#6366f1,#8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 15px; }
+    .logo-title { font-family: 'Lora', serif; font-weight: 700; font-size: 15px; color: #111827; }
+    .logo-sub { font-size: 10px; color: #9ca3af; }
+    .stats { display: flex; gap: 18px; align-items: center; }
+    .stat { text-align: center; }
+    .stat-val { font-size: 18px; font-weight: 700; }
+    .stat-lbl { font-size: 9px; color: #9ca3af; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+
+    /* Toolbar */
+    #toolbar { padding: 12px 22px 0; display: flex; gap: 9px; align-items: center; flex-wrap: wrap; }
+    .btn { padding: 8px 18px; border-radius: 9px; border: none; font-weight: 700; font-size: 13px; cursor: pointer; transition: all .2s; }
+    .btn-primary { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: white; box-shadow: 0 4px 14px #6366f133; }
+    .btn-primary:hover { opacity: .9; }
+    .btn-primary:disabled { background: #e5e7eb; color: #9ca3af; box-shadow: none; cursor: not-allowed; }
+    .btn-secondary { background: white; color: #6b7280; border: 1.5px solid #e5e7eb; }
+    .btn-active { background: #f5f3ff; color: #6366f1; border: 1.5px solid #6366f1; }
+
+    /* Main layout */
+    #main { display: flex; flex: 1; padding: 12px 22px 22px; gap: 12px; overflow: hidden; min-height: 0; height: calc(100vh - 120px); }
+
+    /* Email list */
+    #email-list { width: 330px; flex-shrink: 0; overflow-y: auto; padding-right: 3px; }
+    .list-header { font-size: 10px; font-weight: 700; color: #9ca3af; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 9px; }
+    .email-row { display: flex; align-items: center; gap: 11px; padding: 11px 14px; border-radius: 11px; cursor: pointer; transition: all .18s; margin-bottom: 7px; background: white; border: 1.5px solid #f3f4f6; }
+    .email-row:hover { border-color: #e5e7eb; }
+    .email-row.selected { background: #f5f3ff; border-color: #6366f1; }
+    .email-row.urgent { border-color: #fecaca; box-shadow: 0 2px 10px #dc262618; }
+    .avatar { border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+    .rank { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    .email-meta { flex: 1; min-width: 0; }
+    .email-name { font-weight: 600; font-size: 13px; color: #111827; }
+    .email-subject { font-size: 12px; color: #374151; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .email-resumen { font-size: 11px; color: #9ca3af; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+    .email-tags { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+    .tag { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
+    .tag-sm { font-size: 9px; font-weight: 600; padding: 1px 6px; border-radius: 20px; }
+
+    /* Detail panel */
+    #detail { flex: 1; background: white; border-radius: 13px; border: 1.5px solid #f3f4f6; overflow: hidden; display: flex; flex-direction: column; }
+    #detail-toolbar { padding: 9px 18px; background: #fafafa; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; }
+    #detail-body { flex: 1; overflow-y: auto; }
+    .detail-header { padding: 16px 20px; border-bottom: 1px solid #f3f4f6; }
+    .detail-content { padding: 16px 20px; }
+    .section-label { font-size: 10px; font-weight: 700; color: #9ca3af; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 5px; }
+    .urgency-box { border-radius: 11px; padding: 11px 14px; margin-bottom: 16px; display: flex; align-items: center; gap: 9px; }
+    .copy-btn { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 6px; border: 1px solid #e5e7eb; background: white; color: #374151; cursor: pointer; }
+    .draft-box { background: #fafafa; border: 1px solid #e5e7eb; border-radius: 9px; padding: 12px 14px; font-size: 13px; color: #374151; line-height: 1.7; white-space: pre-wrap; }
+
+    /* Empty / loading states */
+    .skeleton { height: 72px; border-radius: 11px; background: #f3f4f6; animation: pulse 1.5s infinite; margin-bottom: 7px; }
+    .empty { text-align: center; padding: 40px 20px; color: #9ca3af; }
+    .error-banner { margin: 12px 22px 0; padding: 10px 14px; border-radius: 9px; background: #fef2f2; border: 1px solid #fecaca; display: flex; align-items: center; gap: 8px; font-size: 13px; color: #dc2626; }
+
+    /* Footer */
+    #footer { padding: 0 22px 14px; display: flex; gap: 6px; flex-wrap: wrap; }
+    .footer-tag { font-size: 10px; color: #9ca3af; background: white; border: 1px solid #f3f4f6; border-radius: 20px; padding: 2px 8px; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <div class="logo">
+    <div class="logo-icon">📧</div>
+    <div>
+      <div class="logo-title">MailMind AI</div>
+      <div class="logo-sub" id="last-refresh">Conectando...</div>
+    </div>
+  </div>
+  <div class="stats">
+    <div id="urg-counts" style="display:flex;gap:10px;align-items:center;"></div>
+    <div class="stat"><div class="stat-val" id="stat-total" style="color:#6366f1">0</div><div class="stat-lbl">Emails</div></div>
+    <div class="stat"><div class="stat-val" id="stat-analyzed" style="color:#10b981">0</div><div class="stat-lbl">Analizados</div></div>
+    <div class="stat"><div class="stat-val" id="stat-replied" style="color:#f59e0b">0</div><div class="stat-lbl">Respondidos</div></div>
+  </div>
+</div>
+
+<!-- ERROR BANNER -->
+<div id="error-banner" class="error-banner" style="display:none;">
+  ⚠️ <span id="error-msg"></span>
+  <button onclick="fetchEmails()" style="margin-left:auto;font-size:12px;color:#6366f1;background:none;border:none;cursor:pointer;font-weight:600;">Reintentar</button>
+</div>
+
+<!-- TOOLBAR -->
+<div id="toolbar">
+  <button class="btn btn-primary" id="run-btn" onclick="runPipeline()">⚡ Procesar nuevos emails</button>
+  <button class="btn btn-secondary" id="sort-btn" onclick="toggleSort()">Ordenar por urgencia</button>
+  <button class="btn btn-secondary" onclick="fetchEmails()">🔄 Actualizar</button>
+  <span id="running-msg" style="display:none;font-size:12px;color:#9ca3af;animation:pulse 1.5s infinite;">Analizando con Claude... ~30 segundos</span>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <div id="email-list">
+    <div class="list-header" id="list-header">Bandeja</div>
+    <div id="email-rows"></div>
+    <div style="margin-top:10px;padding:11px 13px;border-radius:9px;background:white;border:1px dashed #d1d5db;text-align:center;">
+      <div style="font-size:11px;color:#9ca3af;line-height:1.6;">
+        🔗 Conectado a <strong style="color:#6366f1">Gmail API</strong> en tiempo real<br/>Se actualiza cada 30s
+      </div>
+    </div>
+  </div>
+
+  <div id="detail">
+    <div id="detail-toolbar">
+      <span style="font-size:11px;color:#9ca3af;" id="detail-status">Selecciona un email</span>
+      <span style="font-size:10px;color:#9ca3af;font-family:monospace;" id="detail-id"></span>
+    </div>
+    <div id="detail-body">
+      <div class="empty"><div style="font-size:40px;margin-bottom:8px;">📭</div><div style="font-size:14px;">Selecciona un email de la lista</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div id="footer">
+  <span class="footer-tag">📁 Portfolio project</span>
+  <span class="footer-tag">🐍 Python + FastAPI</span>
+  <span class="footer-tag">📧 Gmail API real</span>
+  <span class="footer-tag">🤖 Claude AI</span>
+  <span class="footer-tag">💾 SQLite DB</span>
+  <span class="footer-tag">🚀 Railway (próximo)</span>
+</div>
+
+<script>
+const API = "http://localhost:8000";
+const CAT = {
+  "Soporte Técnico":        { bg:"#fef2f2", color:"#dc2626", border:"#fecaca" },
+  "Oportunidad de Negocio": { bg:"#f0fdf4", color:"#16a34a", border:"#bbf7d0" },
+  "Reclutamiento":          { bg:"#eff6ff", color:"#2563eb", border:"#bfdbfe" },
+  "Colaboración":           { bg:"#fdf4ff", color:"#9333ea", border:"#e9d5ff" },
+  "Consulta General":       { bg:"#fff7ed", color:"#ea580c", border:"#fed7aa" },
+  "Aviso / Información":    { bg:"#f8fafc", color:"#64748b", border:"#e2e8f0" },
+};
+const URG = {
+  Alta:  { color:"#dc2626", bg:"#fef2f2", border:"#fecaca", icon:"🔴" },
+  Media: { color:"#d97706", bg:"#fffbeb", border:"#fde68a", icon:"🟡" },
+  Baja:  { color:"#16a34a", bg:"#f0fdf4", border:"#bbf7d0", icon:"🟢" },
+};
+const AVPAL = ["#6366f1","#f59e0b","#10b981","#ef4444","#8b5cf6","#06b6d4","#ec4899"];
+
+let emails = [], selected = null, sorted = false;
+
+function initials(name) {
+  if (!name) return "?";
+  return name.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
+}
+function avatarBg(name) { return AVPAL[(name||"?").charCodeAt(0) % AVPAL.length]; }
+function timeAgo(d) {
+  if (!d) return "";
+  const diff = (Date.now() - new Date(d).getTime()) / 1000;
+  if (diff < 60) return "ahora";
+  if (diff < 3600) return `hace ${Math.floor(diff/60)} min`;
+  if (diff < 86400) return `hace ${Math.floor(diff/3600)}h`;
+  return `hace ${Math.floor(diff/86400)}d`;
+}
+
+async function fetchEmails() {
+  showError(null);
+  try {
+    const [er, sr] = await Promise.all([
+      fetch(`${API}/emails/`),
+      fetch(`${API}/emails/stats/summary`)
+    ]);
+    if (!er.ok) throw new Error("Error conectando al backend");
+    const ed = await er.json();
+    const sd = await sr.json();
+    emails = ed.emails || [];
+    if (sorted) {
+      const O = {Alta:0,Media:1,Baja:2};
+      emails.sort((a,b)=>(O[a.urgencia]??9)-(O[b.urgencia]??9));
+    }
+    renderList();
+    renderStats(sd);
+    document.getElementById("last-refresh").textContent = `Actualizado ${timeAgo(new Date())}`;
+    if (!selected && emails.length) selectEmail(emails[0]);
+  } catch(e) {
+    showError("No se puede conectar al backend. ¿Está corriendo en localhost:8000?");
+  }
+}
+
+function renderStats(sd) {
+  document.getElementById("stat-total").textContent    = sd.total || emails.length;
+  document.getElementById("stat-analyzed").textContent = sd.analyzed || emails.length;
+  document.getElementById("stat-replied").textContent  = sd.replied || 0;
+  const uc = sd.urgency_counts || {};
+  const urgEl = document.getElementById("urg-counts");
+  urgEl.innerHTML = ["Alta","Media","Baja"].filter(u=>uc[u]).map(u=>
+    `<span style="display:flex;align-items:center;gap:4px;font-size:12px;">
+      ${URG[u].icon} <strong style="color:${URG[u].color}">${uc[u]}</strong>
+    </span>`
+  ).join("");
+}
+
+function renderList() {
+  const O = {Alta:0,Media:1,Baja:2};
+  document.getElementById("list-header").textContent = sorted ? "📊 Por urgencia" : `Bandeja (${emails.length})`;
+  document.getElementById("email-rows").innerHTML = emails.map((e,i) => {
+    const urg = URG[e.urgencia] || {};
+    const cat = CAT[e.categoria] || CAT["Aviso / Información"];
+    const sel = selected?.id === e.id;
+    const ini = initials(e.sender_name);
+    const bg  = avatarBg(e.sender_name);
+    const rankBg = i===0?"#dc2626":i===1?"#d97706":i===2?"#f59e0b":"#e5e7eb";
+    const rankColor = i<=2?"white":"#9ca3af";
+    return `
+    <div class="email-row${sel?" selected":""}${e.urgencia==="Alta"?" urgent":""}"
+         onclick="selectEmail(${JSON.stringify(e).replace(/"/g,'&quot;')})"
+         style="border-color:${sel?"#6366f1":urg.border||"#f3f4f6"}">
+      ${sorted?`<div class="rank" style="background:${rankBg};color:${rankColor}">${i+1}</div>`:""}
+      <div class="avatar" style="width:36px;height:36px;background:${bg};font-size:12px;">${ini}</div>
+      <div class="email-meta">
+        <div style="display:flex;justify-content:space-between;">
+          <span class="email-name">${e.sender_name||e.sender_email}</span>
+          <span style="font-size:10px;color:#9ca3af;margin-left:4px;flex-shrink:0">${timeAgo(e.received_at)}</span>
+        </div>
+        <div class="email-subject">${e.subject}</div>
+        ${e.resumen?`<div class="email-resumen">${e.resumen}</div>`:""}
+      </div>
+      <div class="email-tags">
+        ${urg.icon?`<span class="tag" style="background:${urg.bg};color:${urg.color};border:1px solid ${urg.border}">${urg.icon} ${e.urgencia}</span>`:""}
+        ${cat?`<span class="tag-sm" style="background:${cat.bg};color:${cat.color};border:1px solid ${cat.border}">${e.categoria}</span>`:""}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function selectEmail(e) {
+  selected = e;
+  renderList();
+  const urg = URG[e.urgencia] || {};
+  const cat = CAT[e.categoria] || CAT["Aviso / Información"];
+  const ini = initials(e.sender_name);
+  const bg  = avatarBg(e.sender_name);
+  document.getElementById("detail-status").textContent = `✓ Analizado · ${timeAgo(e.analyzed_at)}`;
+  document.getElementById("detail-id").textContent = e.gmail_id ? `ID: ${e.gmail_id.slice(0,12)}...` : "";
+  document.getElementById("detail-body").innerHTML = `
+    <div class="detail-header">
+      <div style="display:flex;gap:11px;align-items:flex-start;">
+        <div class="avatar" style="width:40px;height:40px;background:${bg};font-size:14px;flex-shrink:0">${ini}</div>
+        <div style="flex:1">
+          <div style="font-family:'Lora',serif;font-weight:700;font-size:14px;color:#111827;line-height:1.3">${e.subject}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:3px"><strong>${e.sender_name}</strong> · ${e.sender_email} · ${timeAgo(e.received_at)}</div>
+        </div>
+      </div>
+      <p style="font-size:13px;color:#374151;margin-top:12px;line-height:1.7;background:#fafafa;border-radius:9px;padding:11px 13px;border:1px solid #f3f4f6">${e.body_preview||""}</p>
+    </div>
+    <div class="detail-content">
+      ${urg.icon?`
+      <div class="urgency-box" style="background:${urg.bg};border:1.5px solid ${urg.border}">
+        <span style="font-size:20px">${urg.icon}</span>
+        <div>
+          <div style="font-size:10px;font-weight:700;color:${urg.color};letter-spacing:0.1em;text-transform:uppercase">Urgencia ${e.urgencia}</div>
+          <div style="font-size:13px;color:#374151;margin-top:2px">${e.accion_recomendada||""}</div>
+        </div>
+      </div>`:""}
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
+        ${cat?`<span class="tag" style="background:${cat.bg};color:${cat.color};border:1px solid ${cat.border}">${e.categoria}</span>`:""}
+        ${e.tono_remitente?`<span class="tag" style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb">💬 ${e.tono_remitente}</span>`:""}
+        <span class="tag" style="background:${e.status==="replied"?"#f0fdf4":"#f3f4f6"};color:${e.status==="replied"?"#16a34a":"#374151"};border:1px solid #e5e7eb">
+          ${e.status==="replied"?"✓ Respondido":"⏳ Pendiente"}
+        </span>
+      </div>
+      ${e.resumen?`
+      <div style="margin-bottom:14px">
+        <div class="section-label">Resumen</div>
+        <p style="font-size:13.5px;color:#111827;font-weight:600;line-height:1.5">${e.resumen}</p>
+      </div>`:""}
+      ${e.borrador_respuesta?`
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div class="section-label">✉️ Borrador de respuesta</div>
+          <button class="copy-btn" onclick="copyDraft('${e.borrador_respuesta.replace(/'/g,"\\'")}', this)">Copiar</button>
+        </div>
+        <div class="draft-box">${e.borrador_respuesta}</div>
+      </div>`:""}
+    </div>`;
+}
+
+function copyDraft(text, btn) {
+  navigator.clipboard.writeText(text);
+  btn.textContent = "✓ Copiado";
+  btn.style.color = "#16a34a";
+  btn.style.background = "#f0fdf4";
+  setTimeout(() => { btn.textContent = "Copiar"; btn.style.color = "#374151"; btn.style.background = "white"; }, 2000);
+}
+
+function toggleSort() {
+  sorted = !sorted;
+  const btn = document.getElementById("sort-btn");
+  btn.textContent = sorted ? "🔴 Por urgencia" : "Ordenar por urgencia";
+  btn.className = sorted ? "btn btn-active" : "btn btn-secondary";
+  if (sorted) emails.sort((a,b)=>({Alta:0,Media:1,Baja:2}[a.urgencia]??9)-({Alta:0,Media:1,Baja:2}[b.urgencia]??9));
+  renderList();
+}
+
+async function runPipeline() {
+  const btn = document.getElementById("run-btn");
+  btn.disabled = true;
+  btn.textContent = "Procesando...";
+  document.getElementById("running-msg").style.display = "inline";
+  try {
+    await fetch(`${API}/emails/run`, { method: "POST" });
+    setTimeout(() => {
+      fetchEmails();
+      btn.disabled = false;
+      btn.textContent = "⚡ Procesar nuevos emails";
+      document.getElementById("running-msg").style.display = "none";
+    }, 10000);
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = "⚡ Procesar nuevos emails";
+    document.getElementById("running-msg").style.display = "none";
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById("error-banner");
+  if (msg) { el.style.display = "flex"; document.getElementById("error-msg").textContent = msg; }
+  else el.style.display = "none";
+}
+
+// Init
+fetchEmails();
+setInterval(fetchEmails, 30000);
+</script>
+</body>
+</html>
