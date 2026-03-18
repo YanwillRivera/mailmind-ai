@@ -1,12 +1,11 @@
 import json
-import anthropic
+import httpx
 from datetime import datetime
 from app.config import get_settings
 
 
 def analyze_email(email: dict) -> dict:
     settings = get_settings()
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
     prompt = f"""Analiza este email profesional. Responde SOLO con JSON válido, sin texto adicional.
 
@@ -26,13 +25,25 @@ JSON requerido:
   "borrador_respuesta": "borrador profesional de 3-4 líneas"
 }}"""
 
-    message = client.messages.create(
-        model="claude-opus-4-5-20251101",
-        max_tokens=1024,
-        messages=[{"role": "user", "content": prompt}]
-    )
+    with httpx.Client() as client:
+        response = client.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": settings.anthropic_api_key,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
+            },
+            json={
+                "model": "claude-haiku-4-5-20251001",
+                "max_tokens": 1024,
+                "messages": [{"role": "user", "content": prompt}]
+            },
+            timeout=30.0
+        )
+        response.raise_for_status()
+        data = response.json()
 
-    raw = message.content[0].text.strip()
+    raw = data["content"][0]["text"].strip()
     raw = raw.replace("```json", "").replace("```", "").strip()
     result = json.loads(raw)
     result["analyzed_at"] = datetime.utcnow().isoformat()
